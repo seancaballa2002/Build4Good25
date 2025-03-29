@@ -97,6 +97,21 @@
     background-color: #d35400;
     transform: scale(1.05);
   }
+
+  .uploadPreview {
+    margin-top: 1.5rem;
+    text-align: center;
+    color: #fff;
+  }
+  
+  .uploadPreview img {
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 300px;
+    border-radius: 8px;
+    border: 2px solid white;
+  }
+  
   
   @media (max-width: 768px) {
     .cameraContainer {
