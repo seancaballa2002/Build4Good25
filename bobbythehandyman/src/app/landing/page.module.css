@@ -1,4 +1,5 @@
-.container {
+
+    .container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -26,22 +27,6 @@
   .title {
     font-size: 2rem;
     font-weight: 700;
-    color: #2c3e50;
-  }
-  
-  .toolsContainer {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    width: 100%;
-    margin-top: 1rem;
-  }
-  
-  .toolIcon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
     color: #2c3e50;
   }
   
@@ -125,14 +110,40 @@
     text-align: center;
   }
   
+  /* Recording animation styles */
+  .recordingIndicator {
+    margin-top: 12px;
+    font-weight: bold;
+    color: red;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: pulseText 1.5s infinite;
+  }
+  
+  .recordingDot {
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  @keyframes pulseText {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  /* Mobile-friendly tweaks */
   @media (max-width: 768px) {
     .container {
       padding: 1rem;
-    }
-  
-    .toolsContainer {
-      gap: 1rem;
-      flex-wrap: wrap;
     }
   
     .title {
@@ -152,5 +163,4 @@
       height: 36px;
     }
   }
-  
   
