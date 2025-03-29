@@ -19,6 +19,7 @@ export default function CameraPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedURL, setUploadedURL] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -31,9 +32,13 @@ export default function CameraPage() {
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+
+
+          //Fix: Ensure video actually plays
           videoRef.current.onloadedmetadata = () => {
             videoRef.current?.play();
           };
+
           setHasPermission(true);
           setIsCameraActive(true);
         }
@@ -47,6 +52,7 @@ export default function CameraPage() {
 
     return () => {
       if (videoRef.current?.srcObject) {
+
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
         setIsCameraActive(false);
@@ -124,6 +130,7 @@ export default function CameraPage() {
               View Uploaded Photo
             </a>
             <img src={uploadedURL} alt="Uploaded" className={styles.previewImage} />
+
           </div>
         )}
       </main>

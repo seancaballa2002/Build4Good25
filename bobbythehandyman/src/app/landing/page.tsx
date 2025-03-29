@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Camera, Mic, Search } from "lucide-react"
+import { Camera, Mic, Search, ArrowRight } from "lucide-react"
 import { createClient } from "@supabase/supabase-js"
+import { Button } from "@/components/ui/button"
 import styles from "./page.module.css"
 
 // Supabase client
@@ -15,7 +16,7 @@ const supabase = createClient(
 
 export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [recognizing, setRecognizing] = useState(false)
   const router = useRouter()
 
@@ -25,7 +26,6 @@ export default function LandingPage() {
 
   const recognition = SpeechRecognition ? new SpeechRecognition() : null
 
-  // 🧠 Handle mic recognition events
   useEffect(() => {
     if (!recognition) return
 
@@ -51,32 +51,57 @@ export default function LandingPage() {
     }
   }, [recognition])
 
-  // 📝 Submit typed or transcribed text
-  const handleTextSubmit = async () => {
+  const handleCameraClick = () => {
+    router.push("/landing/camera")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
     if (!searchQuery.trim()) return
+    setIsLoading(true)
 
-    setLoading(true)
+    try {
+      // 1. Send to /api/parse
+      const response = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawInput: searchQuery }),
+      })
 
-    const { error } = await supabase.from("requests").insert([
-      {
-        issue: searchQuery,
-        // add user_id or other fields as needed
-      },
-    ])
+      if (!response.ok) throw new Error("Failed to parse input")
+      const result = await response.json()
 
-    setLoading(false)
+      // 2. Store in sessionStorage
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("parsedFormData", JSON.stringify(result.data || {}))
+        if (result.priceEstimate) {
+          sessionStorage.setItem("priceEstimate", JSON.stringify(result.priceEstimate))
+        }
+      }
 
-    if (error) {
-      console.error("❌ Error saving text input:", error)
-      alert(`Error submitting request: ${error.message}`)
-    } else {
-      alert("✅ Issue submitted!")
-      setSearchQuery("")
+      // 3. Insert raw text into Supabase
+      const { error } = await supabase.from("requests").insert([{ issue: searchQuery }])
+      if (error) throw new Error(`Supabase error: ${error.message}`)
+
+      // 4. Navigate to confirmation
+      router.push("/confirmation")
+    } catch (err) {
+      console.error("Error:", err)
+      alert("Something went wrong while submitting.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleCameraClick = () => {
-    router.push("/landing/camera")
+  const handleMicClick = () => {
+    if (recognition && !recognizing) {
+      recognition.start()
+      setRecognizing(true)
+    } else if (recognition && recognizing) {
+      recognition.stop()
+      setRecognizing(false)
+    }
   }
 
   return (
@@ -95,41 +120,29 @@ export default function LandingPage() {
       </header>
 
       <main className={styles.main}>
-        <div className={styles.searchContainer}>
+        <form onSubmit={handleSubmit} className={styles.searchContainer}>
           <div className={styles.searchBar}>
             <Search className={styles.searchIcon} size={24} />
             <input
               type="text"
-              placeholder="What's the Issue?"
+              placeholder="Describe your problem (e.g., leaking faucet in kitchen)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={styles.searchInput}
             />
             <div className={styles.searchActions}>
               <button
+                type="button"
                 className={styles.actionButton}
-                onClick={handleTextSubmit}
-                disabled={loading}
-              >
-                {loading ? "..." : "→"}
-              </button>
-
-              <button
-                className={styles.actionButton}
-                onClick={() => {
-                  if (recognition && !recognizing) {
-                    recognition.start()
-                    setRecognizing(true)
-                  } else if (recognition && recognizing) {
-                    recognition.stop()
-                    setRecognizing(false)
-                  }
-                }}
+                onClick={handleMicClick}
               >
                 <Mic size={20} />
               </button>
-
-              <button className={styles.actionButton} onClick={handleCameraClick}>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={handleCameraClick}
+              >
                 <Camera size={20} />
               </button>
             </div>
@@ -141,7 +154,16 @@ export default function LandingPage() {
               Recording...
             </div>
           )}
-        </div>
+
+          <Button
+            type="submit"
+            className={styles.submitButton || "mt-4 w-full"}
+            disabled={isLoading || !searchQuery.trim()}
+          >
+            {isLoading ? "Processing..." : "Get Quotes"}{" "}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </form>
 
         <p className={styles.tagline}>We can fix it :)</p>
       </main>
