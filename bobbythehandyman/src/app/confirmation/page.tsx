@@ -16,7 +16,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CheckCircle2 } from "lucide-react"
-import styles from "./page.module.css"
 
 export default function ConfirmationPage() {
   const router = useRouter()
