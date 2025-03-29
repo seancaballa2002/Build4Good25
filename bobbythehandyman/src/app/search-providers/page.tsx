@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress"
 import { Phone, User, MapPin, Clock, DollarSign, Star, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-
+import { createClient } from '@supabase/supabase-js'
 // Mock data for service providers
 const mockProviders = [
   {
@@ -60,6 +60,9 @@ const mockProviders = [
     specialties: ["Plumbing", "Electrical", "HVAC"],
   },
 ]
+
+// Create a single supabase client for interacting with your database
+const supabase = createClient('https://xyzcompany.supabase.co', 'public-anon-key')
 
 export default function SearchProvidersPage() {
   const [progress, setProgress] = useState(0)

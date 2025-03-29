@@ -4,18 +4,13 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Calendar } from "lucide-react"
+import { CalendarIcon, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-import { CheckCircle2 } from "lucide-react"
 
 export default function ConfirmationPage() {
   const router = useRouter()
@@ -27,7 +22,7 @@ export default function ConfirmationPage() {
       "Water is dripping constantly from the kitchen faucet, even when turned off completely. The drip is slow but consistent.",
     name: "",
     address: "",
-    date: undefined as Date | undefined,
+    date: "", // Changed from Date | undefined to string
     priceRange: [50, 150] as [number, number],
   })
 
@@ -116,29 +111,18 @@ export default function ConfirmationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>When are you available?</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.date && "text-muted-foreground",
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {formData.date ? format(formData.date, "PPP") : "Select a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={formData.date}
-                      onSelect={(date) => handleInputChange("date", date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="date">When are you available?</Label>
+                <div className="relative">
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => handleInputChange("date", e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
               </div>
 
               <div className="space-y-4">
