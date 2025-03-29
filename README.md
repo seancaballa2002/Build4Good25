@@ -61,7 +61,7 @@ The classic **“just tell me how much it costs!”** struggle is real. Whether 
 Getting a simple quote for a household repair shouldn't be **complicated or inconsistent**. 
 We built **Bobby The Handyman** to make pricing transparent, reduce unnecessary back-and-forth, and help users find reliable service providers quickly.
 
-It also gives local handymen more visibility—especially those who don’t have a website or a presence on major platforms. By streamlining outreach and centralizing quotes, we're creating a space where small, independent professionals can be seen and selected based on clear, fair criteria.
+It also gives local handymen more visibility—especially those who don’t have a website or a presence on major platforms. By streamlining outreach and centralizing quotes, we're creating a space where **small, independent professionals can be seen and selected** based on **clear, fair criteria**.
 
 ---
 
