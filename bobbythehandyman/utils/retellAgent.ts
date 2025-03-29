@@ -3,20 +3,20 @@ import axios from "axios";
 
 // Mock handyman profiles for demo
 const MOCK_HANDYMEN = [
-  {
-    name: "Joe's Plumbing",
-    specialty: "Plumbing",
-    rating: 4.8,
-    responseTime: "fast",
-    phoneNumber: "+19729035634"
-  },
-  {
-    name: "A-1 Repairs",
-    specialty: "General Repairs",
-    rating: 4.5,
-    responseTime: "medium",
-    phoneNumber: "+14693445871"
-  },
+  // {
+  //   name: "Joe's Plumbing",
+  //   specialty: "Plumbing",
+  //   rating: 4.8,
+  //   responseTime: "fast",
+  //   phoneNumber: "+19729035634"
+  // },
+  // {
+  //   name: "A-1 Repairs",
+  //   specialty: "General Repairs",
+  //   rating: 4.5,
+  //   responseTime: "medium",
+  //   phoneNumber: "+14693445871"
+  // },
   {
     name: "Elite Handyman Services",
     specialty: "Electrical, Plumbing",
@@ -64,7 +64,7 @@ async function getQuotesViaRetell(formData: FormData): Promise<QuoteResponse[]> 
     "leak_type": formData.description,
     "price range": formData.desiredPriceRange,
     location: formData.address,
-    phone_number: "+15551234567" // Demo number for the user
+    phone_number: "+19729035634" // Callback number for the customer
   };
   
   try {
@@ -72,6 +72,8 @@ async function getQuotesViaRetell(formData: FormData): Promise<QuoteResponse[]> 
     // In a production environment, you'd integrate with your actual handyman database
     const promises = MOCK_HANDYMEN.map(async (handyman) => {
       try {
+        console.log(`Attempting to call ${handyman.name} at ${handyman.phoneNumber}`);
+        
         // Create a phone call using the Retell API
         const response = await axios.post(
           "https://api.retellai.com/v2/create-phone-call",
@@ -102,10 +104,48 @@ async function getQuotesViaRetell(formData: FormData): Promise<QuoteResponse[]> 
         
         // Store the call_id for later reference (could be used to query call status)
         return synthesizeQuoteResponse(handyman, formData, callId);
-      } catch (error) {
-        console.error(`Error calling ${handyman.name}:`, error);
+      } catch (error: any) {
+        // Extract more detailed error information if available
+        let errorMessage = `Error calling ${handyman.name}`;
+        
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          const status = error.response.status;
+          const responseData = error.response.data;
+          
+          if (status === 402) {
+            errorMessage = `Payment required error (402) when calling ${handyman.name}. Please check your Retell account billing status or credits.`;
+            console.error(errorMessage, responseData);
+          } else if (status === 422) {
+            errorMessage = `Validation error (422) when calling ${handyman.name}. Please check your phone numbers and agent configuration.`;
+            console.error(errorMessage, responseData);
+          } else {
+            errorMessage = `API error (${status}) when calling ${handyman.name}: ${JSON.stringify(responseData)}`;
+            console.error(errorMessage);
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMessage = `No response received when calling ${handyman.name}. Network issue or timeout.`;
+          console.error(errorMessage, error.request);
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          errorMessage = `Error setting up request for ${handyman.name}: ${error.message}`;
+          console.error(errorMessage);
+        }
+        
+        // Log the original error for debugging, but provide a cleaner message
+        console.error(error);
+        
         // Return a fallback response if the API call fails
-        return getMockQuoteForHandyman(handyman, formData);
+        const fallbackResponse = getMockQuoteForHandyman(handyman, formData);
+        
+        // Add error information to the fallback response
+        return {
+          ...fallbackResponse,
+          callError: errorMessage,
+          status: "failed" // Mark this quote as failed due to call error
+        };
       }
     });
     

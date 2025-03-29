@@ -26,8 +26,8 @@ export default function LandingPage() {
     setIsLoading(true)
     
     try {
-      // Call the parse API endpoint to process the input
-      const response = await fetch('/api/parse', {
+      // Step 1: Call the parse API endpoint to process the input
+      const parseResponse = await fetch('/api/parse', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,31 +35,32 @@ export default function LandingPage() {
         body: JSON.stringify({ rawInput: searchQuery }),
       })
       
-      if (!response.ok) {
+      if (!parseResponse.ok) {
         throw new Error('Failed to parse input')
       }
       
-      const result = await response.json()
+      const parseResult = await parseResponse.json()
+      const parsedData = parseResult.data || {}
       
-      // Use try-catch when accessing sessionStorage to handle SSR contexts
+      // Store the parsed data in sessionStorage
       try {
-        // Store the parsed data in sessionStorage
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('parsedFormData', JSON.stringify(result.data || {}))
+          sessionStorage.setItem('parsedFormData', JSON.stringify(parsedData))
           
           // Store price estimate if available
-          if (result.priceEstimate) {
-            sessionStorage.setItem('priceEstimate', JSON.stringify(result.priceEstimate))
+          if (parseResult.priceEstimate) {
+            sessionStorage.setItem('priceEstimate', JSON.stringify(parseResult.priceEstimate))
           }
         }
       } catch (storageError) {
         console.error('Error storing data:', storageError)
       }
-      
-      // Navigate to the confirmation page
-      router.push('/confirmation')
+
+      // Redirect to confirmation page for editing before submission
+      router.push('/confirmation');
     } catch (error) {
       console.error('Error:', error)
+      alert('There was an error processing your request. Please try again.')
     } finally {
       setIsLoading(false)
     }

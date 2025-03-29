@@ -9,101 +9,49 @@ import { updateQuoteByCallId } from "../../../../lib/supabaseActions";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get the webhook payload from Retell
-    const webhookData = await request.json();
-    
-    // Verify this is a call-related event
-    if (!webhookData.event || !webhookData.event.startsWith('call_')) {
-      return NextResponse.json(
-        { error: "Not a call event" },
-        { status: 400 }
-      );
+    const data = await request.json();
+
+    console.log("Received Retell webhook:", JSON.stringify(data, null, 2));
+
+    // Handle different types of events
+    if (data.event === "call.completed") {
+      // Call completed successfully
+      await updateQuoteByCallId(data.call_id, {
+        status: "completed",
+        callSummary: data.summary || "Call completed successfully",
+        userSentiment: data.sentiment || "neutral",
+        callSuccessful: true
+      });
+    } else if (data.event === "call.ended") {
+      // Call ended (could be normal or abnormal termination)
+      // Check if there's an error in the call
+      if (data.error) {
+        await updateQuoteByCallId(data.call_id, {
+          status: "failed",
+          callSummary: `Call ended with error: ${data.error}`,
+          callSuccessful: false
+        });
+      } else {
+        // Normal end of call
+        await updateQuoteByCallId(data.call_id, {
+          status: "completed",
+          callSummary: data.summary || "Call ended normally",
+          userSentiment: data.sentiment || "neutral",
+          callSuccessful: true
+        });
+      }
+    } else if (data.event === "call.failed") {
+      // Call failed to connect or had an error
+      await updateQuoteByCallId(data.call_id, {
+        status: "failed",
+        callSummary: `Call failed: ${data.error || "Unknown error"}`,
+        callSuccessful: false
+      });
     }
-    
-    // Extract the call data
-    const callData = webhookData.data;
-    if (!callData || !callData.call_id) {
-      return NextResponse.json(
-        { error: "Invalid call data" },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`Received webhook for call ${callData.call_id} with event ${webhookData.event}`);
-    
-    // Process based on event type
-    let status = "unknown";
-    let quoteData = {};
-    
-    switch (webhookData.event) {
-      case 'call_ended':
-        status = "completed";
-        // Calls that end normally are completed
-        break;
-        
-      case 'call_failed':
-        status = "failed";
-        // Call failed to connect or had an error
-        break;
-        
-      case 'call_analyzed':
-        // Call has been analyzed, extract the quote details from the transcript
-        status = "analyzed";
-        
-        if (callData.call_analysis) {
-          const { call_summary, user_sentiment, call_successful } = callData.call_analysis;
-          
-          // Extract data from the transcript if available
-          let availableTime = "";
-          let quotePrice = "";
-          
-          // Simple extraction for demo purposes - in production you'd use more robust parsing
-          if (callData.transcript) {
-            // Extract quoted price from transcript
-            const priceMatch = callData.transcript.match(/(\$\d+(?:-\d+)?)/);
-            if (priceMatch) {
-              quotePrice = priceMatch[1];
-            }
-            
-            // Extract availability from transcript
-            const availMatch = callData.transcript.match(/available\s+([^,.]+)/i);
-            if (availMatch) {
-              availableTime = availMatch[1];
-            }
-          }
-          
-          quoteData = {
-            quote_price: quotePrice || "",
-            available_time: availableTime || "",
-            call_summary: call_summary || "",
-            user_sentiment: user_sentiment || "",
-            call_successful: call_successful || false
-          };
-        }
-        break;
-        
-      default:
-        // Other events like call_registered, call_started, etc.
-        status = webhookData.event.replace('call_', '');
-    }
-    
-    // Update the quote in the database with the new status and data
-    const { error } = await updateQuoteByCallId(callData.call_id, {
-      call_status: status,
-      ...quoteData
-    });
-    
-    if (error) {
-      console.error("Error updating quote:", error);
-      return NextResponse.json(
-        { error: "Failed to update quote" },
-        { status: 500 }
-      );
-    }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    console.error("Error processing Retell webhook:", error);
     return NextResponse.json(
       { error: "Failed to process webhook" },
       { status: 500 }

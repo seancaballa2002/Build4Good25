@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuotesFromHandymen } from "../../../../utils/retellAgent";
-import { insertUser, insertRequest, insertQuote } from "../../../../lib/supabaseActions";
+import { getQuotesFromHandymen } from "../../../utils/retellAgent";
+import { insertUser, insertRequest, insertQuote } from "../../../lib/supabaseActions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
     // 1. Insert user
     const { data: userData, error: userError } = await insertUser({
       name: formData.name,
-      // Add email/phone if available
+      email: formData.email || null,
+      phone: formData.phone || null,
     });
     
     if (userError) {
@@ -33,9 +34,10 @@ export async function POST(request: NextRequest) {
       description: formData.description || "",
       address: formData.address,
       times_available: Array.isArray(formData.timesAvailable) 
-        ? JSON.stringify(formData.timesAvailable) 
-        : formData.timesAvailable,
-      desired_price_range: formData.desiredPriceRange
+        ? formData.timesAvailable 
+        : [formData.timesAvailable],
+      desired_price_range: formData.desiredPriceRange,
+      text_input: formData.description || ""
     });
     
     if (requestError) {
@@ -45,29 +47,51 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 3. Get quotes from handymen (now using Retell API if configured)
-    const quotes = await getQuotesFromHandymen(formData);
+    // 3. Get quotes from handymen
+    console.log("Getting quotes from handymen...");
+    const quotes = await getQuotesFromHandymen(requestData, userData);
     
     // 4. Insert quotes into database
     for (const quote of quotes) {
-      await insertQuote({
-        request_id: requestData.id,
-        provider_name: quote.providerName,
-        quote_price: quote.quotePrice,
-        available_time: quote.availableTime,
-        duration: quote.duration,
-        included_in_quote: quote.includedInQuote,
-        contact_info: quote.contactInfo,
-        call_id: quote.callId, // Store the Retell call ID if available
-        call_status: quote.status // Store the call status
-      });
+      try {
+        // Prepare quote data for database - ensure provider_name is set
+        const quoteData = {
+          request_id: requestData.id,
+          provider_name: quote.handyman_name || "Unknown Provider", // Ensure this is never null
+          quote_price: quote.price || 0,
+          available_time: "Flexible", // Default value
+          duration: "1-2 hours", // Default value
+          included_in_quote: "Labor and inspection", // Default value
+          call_id: quote.call_id || "",
+          call_status: quote.call_status || "pending",
+          call_summary: quote.call_summary || null,
+          user_sentiment: quote.user_sentiment || null,
+          call_successful: quote.call_successful || false
+        };
+
+        const { error: quoteError } = await insertQuote(quoteData);
+        
+        if (quoteError) {
+          console.error("Error inserting quote:", quoteError);
+          // Continue with other quotes even if one fails
+        } else {
+          console.log("Successfully inserted quote for provider:", quoteData.provider_name);
+        }
+      } catch (error) {
+        console.error("Error processing quote:", error);
+        // Continue with other quotes
+      }
     }
-    
-    return NextResponse.json({ data: quotes });
+
+    // Return success with quotes data
+    return NextResponse.json({ 
+      success: true,
+      data: quotes
+    });
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("Error in submit API:", error);
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { error: "Failed to process submission" },
       { status: 500 }
     );
   }
