@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarIcon, CheckCircle2 } from "lucide-react"
+import { Calendar, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,7 +15,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { CheckCircle2 } from "lucide-react"
 import { FormData } from "@/types"
 
 interface PriceEstimate {
@@ -32,7 +31,7 @@ export default function ConfirmationPage() {
     description: "",
     name: "",
     address: "",
-    date: "", // Changed from Date | undefined to string
+    date: undefined as Date | undefined,
     priceRange: [50, 150] as [number, number],
     timesAvailable: [] as string[],
     desiredPriceRange: ""
@@ -150,7 +149,7 @@ export default function ConfirmationPage() {
       address: formData.address || "75025", // Default to Plano, TX
       timesAvailable: Array.isArray(formData.timesAvailable) && formData.timesAvailable.length > 0 ? 
         formData.timesAvailable : 
-        [formData.date ? format(formData.date, 'EEEE, MMMM do') : 'Flexible'],
+        [formData.date instanceof Date ? format(formData.date, 'EEEE, MMMM do') : 'Flexible'],
       desiredPriceRange: formData.desiredPriceRange || `$${formData.priceRange[0]}-${formData.priceRange[1]}`
     }
     
@@ -306,7 +305,7 @@ export default function ConfirmationPage() {
                         )}
                       >
                         <Calendar className="mr-2 h-4 w-4" />
-                        {formData.date ? format(formData.date, "PPP") : "Select a date"}
+                        {formData.date instanceof Date ? format(formData.date, "PPP") : "Select a date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">

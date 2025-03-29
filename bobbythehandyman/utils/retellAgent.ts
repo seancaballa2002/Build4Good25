@@ -8,21 +8,21 @@ const MOCK_HANDYMEN = [
     specialty: "Plumbing",
     rating: 4.8,
     responseTime: "fast",
-    phoneNumber: "+15551234567"
+    phoneNumber: "+19729035634"
   },
   {
     name: "A-1 Repairs",
     specialty: "General Repairs",
     rating: 4.5,
     responseTime: "medium",
-    phoneNumber: "+15552345678"
+    phoneNumber: "+14693445871"
   },
   {
     name: "Elite Handyman Services",
     specialty: "Electrical, Plumbing",
     rating: 4.9,
     responseTime: "slow",
-    phoneNumber: "+15553456789"
+    phoneNumber: "+18322486814"
   }
 ];
 
@@ -76,9 +76,9 @@ async function getQuotesViaRetell(formData: FormData): Promise<QuoteResponse[]> 
         const response = await axios.post(
           "https://api.retellai.com/v2/create-phone-call",
           {
-            from_number: "+15551234599", // Your Retell purchased number
+            from_number: process.env.RETELL_PHONE_NUMBER || "+19729035634", // Use configured number or default to first number
             to_number: handyman.phoneNumber,
-            agent_id: "conversation_flow_bcf8f699636c", // The agent ID from your conversation flow
+            agent_id: process.env.RETELL_AGENT_ID || "conversation_flow_bcf8f699636c", // Get agent ID from config
             retell_llm_dynamic_variables: dynamicVariables,
             metadata: {
               handyman_name: handyman.name,
