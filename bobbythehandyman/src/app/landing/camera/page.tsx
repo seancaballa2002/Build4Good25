@@ -3,10 +3,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera } from "lucide-react";
+import { AlignCenter, ArrowLeft, Camera } from "lucide-react";
 import styles from "./page.module.css";
 
-// 👇 Supabase config
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -19,6 +18,7 @@ export default function CameraPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedURL, setUploadedURL] = useState<string | null>(null);
+  const [imageDescription, setImageDescription] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function CameraPage() {
     canvas.toBlob(async (blob) => {
       if (!blob) return;
 
-      const fileName = `photo-${Date.now()}.jpg`.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const fileName = `photo-${Date.now()}.jpg`;
 
       setIsUploading(true);
       const { data, error } = await supabase.storage
@@ -79,19 +79,51 @@ export default function CameraPage() {
         });
       setIsUploading(false);
 
-      if (error) {
-        console.error("Upload error:", error.message);
+      if (error || !data) {
+        console.error("❌ Upload error:", error?.message);
         return;
       }
 
-      const publicURL = supabase.storage
+      // ✅ Get public URL
+      const { publicUrl } = supabase.storage
         .from("bobby-bucket")
-        .getPublicUrl(data?.path ?? "").data.publicUrl;
+        .getPublicUrl(data.path).data;
 
-      console.log("Uploaded photo:", data);
-      console.log("Public photo URL:", publicURL);
+      // ✅ Groq expects a direct .jpg URL
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png)$/i.test(publicUrl)) {
+        console.error("❌ Invalid image URL format:", publicUrl);
+        alert("The image URL format is invalid for Groq.");
+        return;
+      }
 
-      setUploadedURL(publicURL);
+      setUploadedURL(publicUrl);
+
+      try {
+        const response = await fetch("/api/describe_image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: publicUrl }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Groq API returned an error");
+        }
+
+        const result = await response.json();
+        setImageDescription(result.description);
+
+        // ✅ Save both image and description to Supabase
+        const { error: dbError } = await supabase.from("requests").insert([
+          {
+            image_url: publicUrl,
+            description: result.description,
+          },
+        ]);
+
+        if (dbError) console.error("❌ Error saving to DB:", dbError.message);
+      } catch (err) {
+        console.error("❌ Failed to describe or save image:", err);
+      }
     }, "image/jpeg");
   };
 
@@ -118,14 +150,31 @@ export default function CameraPage() {
         </div>
 
         {uploadedURL && (
-          <div className={styles.uploadPreview}>
-            <p>✅ Upload successful!</p>
-            <a href={uploadedURL} target="_blank" rel="noopener noreferrer">
-              View Uploaded Photo
-            </a>
-            <img src={uploadedURL} alt="Uploaded" className={styles.previewImage} />
-          </div>
-        )}
+  <div className="mt-6 p-4 bg-[#2c3e50] rounded-xl text-white text-center shadow-lg max-w-xl mx-auto space-y-4">
+    <div className="text-green-400 font-semibold text-lg">✅ Upload successful!</div>
+
+    {imageDescription && (
+      <p className="text-base italic">
+        <span className="font-medium">Description:</span> {imageDescription}
+      </p>
+    )}
+
+    <a
+      href={uploadedURL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-300 underline"
+    >
+      View Uploaded Photo
+    </a>
+
+    <img
+      src={uploadedURL}
+      alt="Uploaded"
+      className="rounded-lg shadow-md mx-auto w-full max-w-md border border-gray-700"
+    />
+  </div>
+)}
       </main>
     </div>
   );

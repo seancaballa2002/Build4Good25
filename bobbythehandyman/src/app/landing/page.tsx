@@ -107,7 +107,7 @@ export default function LandingPage() {
       <header className={styles.header}>
         <div className={styles.logoContainer}>
           <Image
-            src="/placeholder.svg?height=80&width=80"
+            src="/bobby.png"
             alt="Handyman Logo"
             width={80}
             height={80}
