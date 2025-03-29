@@ -1,12 +1,17 @@
+'use client';
+
 import Image from "next/image";
 import { useState } from "react";
-
-import { redirect } from "next/navigation"
+import { redirect } from "next/navigation";
+import QuoteComparison from "./components/QuoteComparison";
+import { QuoteResponse } from "@/types";
 
 export default function Home() {
   // Redirect to the landing page
-  redirect("/landing")
+  redirect("/landing");
 
+  // Initialize quotes array
+  const [quotes, setQuotes] = useState<QuoteResponse[]>([]);
   // Add this state
   const [showComparison, setShowComparison] = useState(false);
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { QuoteResponse } from "@/types";
 
 interface QuoteComparisonProps {
