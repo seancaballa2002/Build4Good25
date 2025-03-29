@@ -1,13 +1,102 @@
-import { FormData } from "@/types";
+import { FormData } from "../src/types";
+import axios from "axios";
 
-// This is a mock implementation for now
-// In a real implementation, you would call OpenAI or another LLM provider
+interface LLMParseResponse {
+  issue: string;
+  description: string;
+  name: string;
+  address: string;
+  timesAvailable: string[];
+  desiredPriceRange: string;
+  clarifyingQuestions?: string[];
+}
+
+// Actual implementation using Groq API
 export async function parseUserInput(rawInput: string): Promise<FormData> {
-  // For demo purposes, we'll use a simple mock that extracts some patterns
-  // In a real implementation, this would call an LLM API
-  
   console.log("Parsing raw input:", rawInput);
   
+  try {
+    // Try to use Groq API for structured parsing
+    const parsedData = await parseWithGroq(rawInput);
+    return parsedData;
+  } catch (error) {
+    console.error("Error parsing with Groq, falling back to regex:", error);
+    // Fall back to regex parsing if API fails
+    return parseWithRegex(rawInput);
+  }
+}
+
+// Parse user input using Groq API for more accurate extraction
+async function parseWithGroq(rawInput: string): Promise<FormData> {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  
+  if (!GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY not set in environment variables");
+  }
+  
+  const prompt = `
+    You are an AI assistant helping to extract structured information from a user's home repair request. 
+    Parse the following text into a structured JSON object with these fields:
+    - issue: A short title describing the main problem (e.g., "Leaking faucet")
+    - description: Detailed description of the problem
+    - name: The user's name (if provided, otherwise "Guest")
+    - address: Location or ZIP code (default to "75025" for Plano if not provided)
+    - timesAvailable: Array of available time slots mentioned (e.g., ["Saturday morning"])
+    - desiredPriceRange: Budget mentioned (e.g., "$50-100" or "$65")
+    - clarifyingQuestions: Array of 1-3 important questions to ask if information is missing
+
+    User input: "${rawInput}"
+
+    Return only the JSON object with no additional text.
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const responseData = response.data.choices[0]?.message?.content;
+    
+    if (!responseData) {
+      throw new Error("Empty response from Groq API");
+    }
+
+    // Parse the JSON response
+    const parsedResponse = JSON.parse(responseData) as LLMParseResponse;
+    
+    // Store clarifying questions in session storage for retrieval by the frontend
+    if (typeof window !== 'undefined' && parsedResponse.clarifyingQuestions?.length) {
+      try {
+        sessionStorage.setItem('clarifyingQuestions', JSON.stringify(parsedResponse.clarifyingQuestions));
+      } catch (e) {
+        console.error("Failed to store clarifying questions:", e);
+      }
+    }
+    
+    // Remove clarifying questions from the return object since FormData doesn't include it
+    const { clarifyingQuestions, ...formData } = parsedResponse;
+    
+    return formData as FormData;
+  } catch (error) {
+    console.error("Error calling Groq API:", error);
+    throw error;
+  }
+}
+
+// Fallback parser using regex patterns (existing implementation)
+function parseWithRegex(rawInput: string): FormData {
   // Extract issue - first sentence or up to first period
   const issue = rawInput.split('.')[0].trim();
   
@@ -62,28 +151,52 @@ export async function parseUserInput(rawInput: string): Promise<FormData> {
     }
   }
   
-  // Extract price range with better pattern matching
+  // Extract price range with more robust pattern matching
   let desiredPriceRange = "$50-100"; // Default
-  const pricePatterns = [
-    { regex: /budget\s+(?:is\s+)?(?:around\s+)?\$?(\d+)(?:-(\d+))?/i, groups: [1, 2] },
-    { regex: /(?:willing|able)\s+to\s+(?:pay|spend)\s+(?:around\s+)?\$?(\d+)(?:-(\d+))?/i, groups: [1, 2] },
-    { regex: /\$(\d+)(?:-(\d+))?/i, groups: [1, 2] }
-  ];
   
-  for (const pattern of pricePatterns) {
-    const match = rawInput.match(pattern.regex);
-    if (match) {
-      if (match[pattern.groups[1]]) {
-        desiredPriceRange = `$${match[pattern.groups[0]]}-${match[pattern.groups[1]]}`;
-      } else {
-        desiredPriceRange = `$${match[pattern.groups[0]]}`;
-      }
-      break;
+  // Try to find price patterns in the text
+  const priceRegex = /(?:budget|price|cost|pay|spend|around|\$)\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i;
+  const priceMatch = rawInput.match(priceRegex);
+  
+  if (priceMatch) {
+    const minPrice = priceMatch[1];
+    const maxPrice = priceMatch[2];
+    
+    if (maxPrice) {
+      desiredPriceRange = `$${minPrice}-${maxPrice}`;
+    } else {
+      // If only one price is mentioned, create a range around it
+      const price = parseInt(minPrice, 10);
+      const min = Math.max(10, price - 20);
+      const max = price + 30;
+      desiredPriceRange = `$${price}`;
     }
   }
   
   // Extract description - use the full input as description
   const description = rawInput;
+  
+  // Generate some clarifying questions based on what might be missing
+  const clarifyingQuestions = [];
+  
+  if (name === "Guest") {
+    clarifyingQuestions.push("What's your name?");
+  }
+  if (timesAvailable.length === 0) {
+    clarifyingQuestions.push("When would you be available for a handyman to visit?");
+  }
+  if (address === "75025" && !rawInput.includes("Plano")) {
+    clarifyingQuestions.push("What's your address or ZIP code?");
+  }
+  
+  // Store clarifying questions in session storage for retrieval by the frontend
+  if (typeof window !== 'undefined' && clarifyingQuestions.length) {
+    try {
+      sessionStorage.setItem('clarifyingQuestions', JSON.stringify(clarifyingQuestions));
+    } catch (e) {
+      console.error("Failed to store clarifying questions:", e);
+    }
+  }
   
   return {
     issue,
