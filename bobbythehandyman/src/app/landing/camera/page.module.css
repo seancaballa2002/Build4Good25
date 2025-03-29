@@ -52,19 +52,24 @@
   
   .cameraContainer {
     position: relative;
-    width: 100%;
-    max-width: 500px;
-    height: 70vh;
+    width: 90vw;              /* Wider container */
+    max-width: 900px;         /* Higher max size */
+    height: 80vh;             /* Taller height */
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 16px;
     background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .cameraView {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover;       /* Stretches nicely */
+    border-radius: 16px;
   }
+  
   
   .cameraControls {
     position: absolute;

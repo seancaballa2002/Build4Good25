@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useRef, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera } from "lucide-react"
-import styles from "./page.module.css"
+import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Camera } from "lucide-react";
+import styles from "./page.module.css";
 
 export default function CameraPage() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
-  const [isCameraActive, setIsCameraActive] = useState(false)
-  const router = useRouter()
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     async function setupCamera() {
@@ -17,35 +17,39 @@ export default function CameraPage() {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: false,
-        })
+        });
 
         if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          setHasPermission(true)
-          setIsCameraActive(true)
+          videoRef.current.srcObject = stream;
+
+          //Fix: Ensure video actually plays
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play();
+          };
+
+          setHasPermission(true);
+          setIsCameraActive(true);
         }
       } catch (err) {
-        console.error("Error accessing camera:", err)
-        setHasPermission(false)
+        console.error("Error accessing camera:", err);
+        setHasPermission(false);
       }
     }
 
-    setupCamera()
+    setupCamera();
 
-    // Cleanup function to stop camera when component unmounts
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream
-        const tracks = stream.getTracks()
-        tracks.forEach((track) => track.stop())
-        setIsCameraActive(false)
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+        setIsCameraActive(false);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const handleBack = () => {
-    router.back()
-  }
+    router.back();
+  };
 
   return (
     <div className={styles.container}>
@@ -63,16 +67,22 @@ export default function CameraPage() {
           </div>
         )}
 
+        <div className={styles.cameraContainer}>
+        <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className={styles.cameraView}
+        />
         {hasPermission === true && (
-          <div className={styles.cameraContainer}>
-            <video ref={videoRef} autoPlay playsInline className={styles.cameraView} />
             <div className={styles.cameraControls}>
-              <button className={styles.captureButton}>
+            <button className={styles.captureButton}>
                 <Camera size={24} />
-              </button>
+            </button>
             </div>
-          </div>
         )}
+        </div>
+
 
         {hasPermission === null && (
           <div className={styles.loading}>
@@ -81,6 +91,5 @@ export default function CameraPage() {
         )}
       </main>
     </div>
-  )
+  );
 }
-
