@@ -1,4 +1,4 @@
-import { supabase } from '@/utils/supabase'; // Assuming utils/supabase.ts path
+import { supabase } from '../utils/supabase'; // Correct relative path
 
 // 4.1 Insert a User
 export async function insertUser(userData: { name: string; email?: string; phone?: string }) {
@@ -48,6 +48,8 @@ export async function insertQuote(quoteData: {
   duration?: string;
   included_in_quote?: string;
   contact_info?: string;
+  call_id?: string;
+  call_status?: string;
 }) {
   const { data, error } = await supabase
     .from('quotes')
@@ -60,6 +62,40 @@ export async function insertQuote(quoteData: {
     return { data: null, error };
   }
   console.log('Inserted quote:', data);
+  return { data, error: null };
+}
+
+// 4.4 Update a Quote by call_id (for Retell webhook)
+export async function updateQuoteByCallId(callId: string, updateData: {
+  call_status?: string;
+  quote_price?: string;
+  available_time?: string;
+  duration?: string;
+  included_in_quote?: string;
+  contact_info?: string;
+  call_summary?: string;
+  user_sentiment?: string;
+  call_successful?: boolean;
+}) {
+  if (!callId) {
+    console.error('No call_id provided for quote update');
+    return { data: null, error: new Error('No call_id provided') };
+  }
+
+  console.log(`Updating quote with call_id ${callId}:`, updateData);
+
+  const { data, error } = await supabase
+    .from('quotes')
+    .update(updateData)
+    .eq('call_id', callId)
+    .select();
+
+  if (error) {
+    console.error('Error updating quote:', error);
+    return { data: null, error };
+  }
+
+  console.log('Updated quote:', data);
   return { data, error: null };
 }
 
@@ -83,6 +119,11 @@ export async function fetchRequestsWithQuotes(userId?: string) {
         duration,
         included_in_quote,
         contact_info,
+        call_id,
+        call_status,
+        call_summary,
+        user_sentiment,
+        call_successful,
         created_at
       )
     `)

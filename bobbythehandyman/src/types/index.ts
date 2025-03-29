@@ -17,6 +17,8 @@ export interface FormData {
     duration: string;
     includedInQuote: string;
     contactInfo?: string;
+    callId?: string;      // Retell API call ID for reference
+    status?: string;      // Status of the Retell call (pending, completed, failed)
   }
   
   // Database types that match our Supabase schema
@@ -49,5 +51,7 @@ export interface FormData {
     duration: string;
     included_in_quote: string;
     contact_info?: string;
+    call_id?: string;     // Reference to the Retell call ID
+    call_status?: string; // Status of the call
     created_at: string;
   } 

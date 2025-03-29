@@ -9,9 +9,11 @@ export default function QuoteCard({
   availableTime,
   duration,
   includedInQuote,
-  contactInfo
+  contactInfo,
+  callId,
+  status: initialStatus
 }: QuoteCardProps) {
-  const [status, setStatus] = useState<'pending' | 'accepted' | 'rejected'>('pending');
+  const [quoteStatus, setQuoteStatus] = useState<'pending' | 'accepted' | 'rejected'>(initialStatus === 'pending' ? 'pending' : 'pending');
   
   // Format includedInQuote as bullet points if comma-separated
   const includedItems = includedInQuote.includes(',') 
@@ -19,16 +21,16 @@ export default function QuoteCard({
     : [includedInQuote];
 
   const handleAccept = () => {
-    setStatus('accepted');
+    setQuoteStatus('accepted');
     // In a real app, you would make an API call here to update the database
   };
 
   const handleReject = () => {
-    setStatus('rejected');
+    setQuoteStatus('rejected');
     // In a real app, you would make an API call here to update the database
   };
 
-  if (status === 'accepted') {
+  if (quoteStatus === 'accepted') {
     return (
       <div className="border rounded-lg overflow-hidden shadow-md bg-green-50 dark:bg-green-900 max-w-md w-full">
         <div className="p-6">
@@ -57,7 +59,7 @@ export default function QuoteCard({
           </div>
           
           <button 
-            onClick={() => setStatus('pending')}
+            onClick={() => setQuoteStatus('pending')}
             className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded"
           >
             Change Selection
@@ -67,7 +69,7 @@ export default function QuoteCard({
     );
   }
 
-  if (status === 'rejected') {
+  if (quoteStatus === 'rejected') {
     return (
       <div className="border rounded-lg overflow-hidden shadow-md bg-gray-100 dark:bg-gray-800 max-w-md w-full opacity-60">
         <div className="p-6">
@@ -81,7 +83,7 @@ export default function QuoteCard({
           <p className="text-center text-gray-500 my-4">Quote declined</p>
           
           <button 
-            onClick={() => setStatus('pending')}
+            onClick={() => setQuoteStatus('pending')}
             className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded"
           >
             Reconsider
@@ -100,6 +102,18 @@ export default function QuoteCard({
             {quotePrice.startsWith('$') ? quotePrice : `$${quotePrice}`}
           </span>
         </div>
+
+        {/* Call Status Badge */}
+        {initialStatus && (
+          <div className={`mb-3 inline-block px-2 py-1 rounded text-xs font-semibold
+            ${initialStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+              initialStatus === 'completed' ? 'bg-green-100 text-green-800' : 
+              'bg-gray-100 text-gray-800'}`}>
+            {initialStatus === 'pending' ? 'Call in progress' : 
+             initialStatus === 'completed' ? 'Call completed' : 
+             initialStatus}
+          </div>
+        )}
         
         <div className="mb-4">
           <p className="text-gray-600 dark:text-gray-300">
@@ -122,6 +136,13 @@ export default function QuoteCard({
         {contactInfo && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Contact: {contactInfo}
+          </p>
+        )}
+
+        {/* Reference ID for call tracking */}
+        {callId && (
+          <p className="text-xs text-gray-400 mb-4">
+            Call ID: {callId.substring(0, 8)}...
           </p>
         )}
         

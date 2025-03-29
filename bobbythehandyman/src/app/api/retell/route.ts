@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuotesFromHandymen } from "@/utils/retellAgent";
-import { insertUser, insertRequest, insertQuote } from "@/lib/supabaseActions";
+import { getQuotesFromHandymen } from "../../../../utils/retellAgent";
+import { insertUser, insertRequest, insertQuote } from "../../../../lib/supabaseActions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 3. Get quotes from handymen (mocked for now)
+    // 3. Get quotes from handymen (now using Retell API if configured)
     const quotes = await getQuotesFromHandymen(formData);
     
     // 4. Insert quotes into database
@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
         available_time: quote.availableTime,
         duration: quote.duration,
         included_in_quote: quote.includedInQuote,
-        contact_info: quote.contactInfo
+        contact_info: quote.contactInfo,
+        call_id: quote.callId, // Store the Retell call ID if available
+        call_status: quote.status // Store the call status
       });
     }
     
