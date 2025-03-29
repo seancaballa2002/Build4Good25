@@ -1,0 +1,156 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f9f9f9;
+    padding: 2rem;
+  }
+  
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+  
+  .logoContainer {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .logo {
+    margin-right: 1rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  
+  .toolsContainer {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  
+  .toolIcon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2c3e50;
+  }
+  
+  .main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  
+  .searchContainer {
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+  
+  .searchBar {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e67e22;
+  }
+  
+  .searchIcon {
+    color: #e67e22;
+    margin-right: 0.75rem;
+  }
+  
+  .searchInput {
+    flex: 1;
+    border: none;
+    font-size: 1.25rem;
+    outline: none;
+    color: #2c3e50;
+  }
+  
+  .searchInput::placeholder {
+    color: #7f8c8d;
+  }
+  
+  .searchActions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .actionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+  }
+  
+  .actionButton:hover {
+    background-color: #e67e22;
+    color: white;
+  }
+  
+  .actionButton:last-child {
+    background-color: #e67e22;
+    color: white;
+  }
+  
+  .actionButton:last-child:hover {
+    background-color: #d35400;
+  }
+  
+  .tagline {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-top: 2rem;
+    text-align: center;
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+  
+    .toolsContainer {
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+  
+    .title {
+      font-size: 1.5rem;
+    }
+  
+    .searchBar {
+      padding: 0.5rem 1rem;
+    }
+  
+    .searchInput {
+      font-size: 1rem;
+    }
+  
+    .actionButton {
+      width: 36px;
+      height: 36px;
+    }
+  }
+  
+  
