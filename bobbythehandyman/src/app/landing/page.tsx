@@ -1,18 +1,60 @@
-// src/app/about/page.tsx
-import Link from "next/link";
+"use client"
 
-export default function AboutPage() {
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { Camera, Mic, Search } from "lucide-react"
+import styles from "./page.module.css"
+
+export default function LandingPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter()
+
+  const handleCameraClick = () => {
+    router.push("/landing/camera")
+  }
+
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">About Bobby the Handyman</h1>
-      <p className="mt-4">
-        Bobby fixes everything from squeaky doors to broken dreams 💪🔧.
-      </p>
-      <div className="mt-6">
-        <Link href="/" className="text-blue-500 underline">
-          ← Back to Home
-        </Link>
-      </div>
-    </main>
-  );
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <div className={styles.logoContainer}>
+          <Image
+            src="/placeholder.svg?height=80&width=80"
+            alt="Handyman Logo"
+            width={80}
+            height={80}
+            className={styles.logo}
+          />
+          <h1 className={styles.title}>Bobby the Handyman</h1>
+        </div>
+
+      </header>
+
+      <main className={styles.main}>
+        <div className={styles.searchContainer}>
+          <div className={styles.searchBar}>
+            <Search className={styles.searchIcon} size={24} />
+            <input
+              type="text"
+              placeholder="Problem?"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+            />
+            <div className={styles.searchActions}>
+              <button className={styles.actionButton}>
+                <Mic size={20} />
+              </button>
+              <button className={styles.actionButton} onClick={handleCameraClick}>
+                <Camera size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p className={styles.tagline}>We can fix it :)</p>
+      </main>
+    </div>
+  )
 }
+
